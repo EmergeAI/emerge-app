@@ -10,7 +10,17 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-electron
+release
 *.local
+
+#lockfile
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+/test-results/
+/playwright-report/
+/playwright/.cache/
 
 # Editor directories and files
 .vscode/*
