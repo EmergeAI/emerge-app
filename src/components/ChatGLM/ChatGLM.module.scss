@@ -11,7 +11,7 @@
         }
 
 
-        .bar-content {
+        .chat-list {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -20,12 +20,11 @@
             overflow-x: hidden;
         }
 
-        .chat {
+        .chat-list-item {
             flex: 1;
-            background-color: #36393f;
+            // background-color: #36393f;
+            justify-content: left;
             padding: 10px;
-            overflow-y: scroll;
-            height: "calc(100vh - 100px)";
         }
 
         // .chat-message {
