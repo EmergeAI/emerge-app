@@ -33,6 +33,12 @@ const ChatGLM: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatServiceRef = useRef<ChatService | null>(null);
 
+    const [maxLength, setMaxLength] = useState(2048);
+    const [topP, setTopP] = useState(0.7);
+    const [temperature, setTemperature] = useState(0.95);
+    const [maxRounds, setMaxRounds] = useState(20);
+    const [useStreamChat, setUseStreamChat] = useState(true);
+
     const handleMessageReceived = (message: string) => {
         // console.log("Message received: ", message);
         setMessages((prevMessages) => [...prevMessages, message]);
@@ -57,7 +63,17 @@ const ChatGLM: React.FC = () => {
 
     const handleSendMessage = () => {
         if (inputMessage && chatServiceRef.current) {
-            chatServiceRef.current.sendMessage(inputMessage);
+            const jsonMessage = JSON.stringify({
+                inputMessage,
+                maxLength,
+                topP,
+                temperature,
+                maxRounds,
+                useStreamChat,
+            });
+
+            chatServiceRef.current.sendMessage(jsonMessage);
+            setInputMessage("");
         }
     };
 
@@ -70,13 +86,13 @@ const ChatGLM: React.FC = () => {
         if (ref.current) {
             ref.current.scrollTop = ref.current.scrollHeight;
         }
-    }
+    };
 
     return (
         <Layout className={styles.chatcontainer} style={{ minHeight: "100vh" }}>
             <Header className="chat-header">
                 <Title level={2} style={{ color: "white" }}>
-                    ChatGLM WebUI
+                    ChatGLM BOT
                 </Title>
             </Header>
             <Content style={{ padding: "1rem" }} >
@@ -132,50 +148,55 @@ const ChatGLM: React.FC = () => {
                     */
                     <TabPane tab="Settings" key="2">
                         <Row>
-                            <Col span={6}>
+                            <Col span={10}>
                                 <Space direction="vertical" size="middle" style={{ width: "100%" }}>
                                     <Title level={4}>Settings</Title>
                                     <div>
-                                        <span>Max Length: </span>
+                                        <AntTypography>Max Length: </AntTypography>
                                         <Slider
                                             defaultValue={2048}
                                             min={4}
                                             max={4096}
                                             step={4}
                                             marks={{ 4: "4", 4096: "4096" }}
+                                            onChange={(value) => setMaxLength(value as number)}
                                         />
                                     </div>
                                     <div>
-                                        <span>Top P: </span>
+                                        <AntTypography>Top P: </AntTypography>
                                         <Slider
                                             defaultValue={0.7}
                                             min={0.01}
                                             max={1}
                                             step={0.01}
                                             marks={{ 0.01: "0.01", 1: "1" }}
+                                            onChange={(value) => setTopP(value as number)}
                                         />
                                     </div>
                                     <div>
-                                        <span>Temperature: </span>
+                                        <AntTypography>Temperature: </AntTypography>
                                         <Slider
                                             defaultValue={0.95}
                                             min={0.01}
                                             max={1}
                                             step={0.01}
                                             marks={{ 0.01: "0.01", 1: "1" }}
+                                            onChange={(value) => setTemperature(value as number)}
                                         />
                                     </div>
                                     <div>
-                                        <span>Max Rounds: </span>
+                                        <AntTypography>Max Rounds: </AntTypography>
                                         <Slider
                                             defaultValue={20}
                                             min={1}
                                             max={100}
                                             step={1}
                                             marks={{ 1: "1", 100: "100" }}
+                                            onChange={(value) => setMaxRounds(value as number)}
                                         />
                                     </div>
-                                    <Checkbox defaultChecked>Use Stream Chat</Checkbox>
+                                    <Checkbox defaultChecked checked={useStreamChat} onChange={(e) => setUseStreamChat(e.target.checked)}
+                                    >Use Stream Chat</Checkbox>
                                 </Space>
                             </Col>
                         </Row>

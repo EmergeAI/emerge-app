@@ -79,6 +79,11 @@
             padding: 10px;
             background-color: #40444b;
             color: white;
+            font-size: 15px;
+        }
+
+        .chat-input input::placeholder {
+            color: white;
         }
 
         .chat-input button {
