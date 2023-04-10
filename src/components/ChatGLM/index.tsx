@@ -41,7 +41,9 @@ const ChatGLM: React.FC = () => {
 
     const handleMessageReceived = (message: string) => {
         // console.log("Message received: ", message);
-        setMessages((prevMessages) => [...prevMessages, message]);
+        const messageObj = JSON.parse(message);
+        const responseMessage = messageObj.responseMessage;
+        setMessages((prevMessages) => [...prevMessages, responseMessage]);
         scrollToBottom(messagesEndRef);
     };
 

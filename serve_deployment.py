@@ -167,10 +167,15 @@ class ChatbotModelDeployment:
 
     # FastAPI will automatically parse the HTTP request for us.
     # @app.get("/hello")
-    def __call__(self, request: Request) -> Dict:
-        return self._predict(request.query_params["query"],
-                             max_length=2048, top_p=0.9,
-                             temperature=0.7, use_stream_chat=False)
+    async def __call__(self, request: Request) -> Dict:
+        data = await request.json()
+        query = data.get("query", "")
+        max_length = data.get("max_length", 2048)
+        top_p = data.get("top_p", 0.9)
+        temperature = data.get("temperature", 0.7)
+        use_stream_chat = data.get("use_stream_chat", False)
+        return self._predict(query, max_length, top_p,
+                             temperature, use_stream_chat)
 
 
 chatbot_model_deployment = ChatbotModelDeployment.bind()
@@ -196,4 +201,7 @@ chatbot_model_deployment = ChatbotModelDeployment.bind()
 # serve run serve_deployment:chatbot_model_deployment
 
 # 5: Send query with command line
-# curl localhost:8000/?query=what%20is%20transformer%3F
+# curl -X POST -H "Content-Type: application/json"
+# -d '{"query": "What is transformer?", "max_length": 2048,
+# "top_p": 0.9, "temperature": 0.7, "use_stream_chat": true}'
+# localhost:8000/
