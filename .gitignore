@@ -1,6 +1,7 @@
 # Models
 model/*
 models/*
+__pycache__
 
 # Logs
 logs
