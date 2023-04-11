@@ -1,4 +1,5 @@
 import argparse
+import time
 from typing import Optional, List, Tuple, Dict
 import requests
 
@@ -6,11 +7,15 @@ import torch
 from torch.cuda import get_device_properties
 from transformers import AutoModel, AutoTokenizer
 
-from starlette.requests import Request
-from fastapi import FastAPI
+# from starlette.requests import Request
+# from starlette.responses import StreamingResponse
+
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 import ray
 from ray import serve
 # from ray.serve import serve
+import asyncio
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument("--port", type=int, default="8000")
@@ -46,10 +51,11 @@ cmd_opts = Options(
 
 
 # 1: Define a FastAPI app and wrap it in a deployment with a route handler.
-# app = FastAPI()
+app = FastAPI()
 
-# @serve.ingress(app)
+
 @serve.deployment(route_prefix="/", ray_actor_options={"num_gpus": 1})
+@serve.ingress(app)
 class ChatbotModelDeployment:
 
     def _load_model(self, cmd_opts=cmd_opts):
@@ -121,10 +127,11 @@ class ChatbotModelDeployment:
                         top_p=top_p,
                         temperature=temperature
                 ):
-                    # print(output[output_pos:], end='', flush=True)
+                    print(output[output_pos:], end='', flush=True)
                     old_output_pos = output_pos
                     output_pos = len(output)
-                    yield query, output[old_output_pos:]  # output[output_pos:]
+                    yield output[old_output_pos:]+'\n'  # output[output_pos:]
+                    time.sleep(0.1)
             else:
                 output, history = self._model.chat(
                     self._tokenizer, query=query, history=history,
@@ -134,7 +141,7 @@ class ChatbotModelDeployment:
                 )
 
                 # print(output)
-                yield query, output
+                yield output+'\n'
 
         except Exception as e:
             print(f"Generation failed: {repr(e)}")
@@ -151,7 +158,7 @@ class ChatbotModelDeployment:
         # Define the function to handle HTTP requests and generate responses
         responses = []
 
-        for _, output in self._infer(
+        for output in self._infer(
             query=query,
             history=None,  # ctx.history,
             max_length=max_length,
@@ -166,19 +173,33 @@ class ChatbotModelDeployment:
         return {"response": responses}
 
     # FastAPI will automatically parse the HTTP request for us.
-    # @app.get("/hello")
-    async def __call__(self, request: Request) -> Dict:
+    @app.post("/")
+    async def query(self, request: Request):
         data = await request.json()
         query = data.get("query", "")
         max_length = data.get("max_length", 2048)
         top_p = data.get("top_p", 0.9)
         temperature = data.get("temperature", 0.7)
-        use_stream_chat = data.get("use_stream_chat", False)
-        return self._predict(query, max_length, top_p,
+        use_stream_chat = data.get("use_stream_chat", True)
+        # return self._predict(query, max_length, top_p,
+        #                      temperature, use_stream_chat)
+
+        output = self._infer(query, None, max_length, top_p,
                              temperature, use_stream_chat)
+        return StreamingResponse(output, media_type="text/plain")
+        # headers={"Content-Type": "text/plain", "Transfer-Encoding": "chunked"})
 
 
 chatbot_model_deployment = ChatbotModelDeployment.bind()
+
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
+
+# @app.post("/")
+# async def get_streamed_output(request: Request):
+#     return await chatbot_model_deployment(request)
+
 # 2: Deploy the deployment.
 # serve.run(ChatbotModelDeployment.bind())
 
